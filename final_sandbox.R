@@ -9,6 +9,7 @@ library("stargazer")
 library("dplyr")
 library(corrplot)
 library(RColorBrewer)
+library(pscl)
 
 jlm_con <- read.csv("rwm_replic_data.csv")
 
@@ -46,4 +47,55 @@ change_col <- glm.nb(Collective ~ Mean_800 +
 summary(change_col)
 
 # For zero inflated: https://stats.idre.ucla.edu/r/dae/zinb/ and https://stats.idre.ucla.edu/r/dae/zip/
+
+# Check for 0 inflation
+table(jlm_con$Individual)
+p <- ggplot(jlm_con, aes(Individual)) +
+  geom_histogram() +
+  scale_x_log10()
+p
+
+table(jlm_con$Collective)
+p <- ggplot(jlm_con, aes(Collective)) +
+  geom_histogram() +
+  scale_x_log10()
+p
+
+
+# Zero inflated models
+m1 <- zeroinfl(Individual ~ Mean_800 + 
+                 Jewish_segment + JLR_station +
+                 Damascus_Gate_dis + With_settlements +
+                 change_1250_800 + change_2000_1250,
+               data = jlm_con, dist = "negbin")
+summary(m1)
+
+m2 <- zeroinfl(Collective ~ Mean_800 + 
+                 Jewish_segment + JLR_station +
+                 Damascus_Gate_dis + With_settlements +
+                 change_1250_800 + change_2000_1250,
+               data = jlm_con, dist = "negbin")
+summary(m2)
+
+# Logistic models
+
+jlm_con <- jlm_con %>%
+  mutate(Individual_ind = ifelse(Individual == 0, 0, 1),
+         Collective_ind = ifelse(Collective == 0, 0, 1))
+
+ind_log <- glm(Individual_ind ~ Mean_800 + 
+                       Jewish_segment + JLR_station +
+                       Damascus_Gate_dis + With_settlements +
+                       change_1250_800 + change_2000_1250,
+                     data=jlm_con, family = "binomial")
+summary(ind_log)
+
+col_log <- glm(Collective_ind ~ Mean_800 + 
+                       Jewish_segment + JLR_station +
+                       Damascus_Gate_dis + With_settlements +
+                       change_1250_800 + change_2000_1250,
+                     data=jlm_con, family = "binomial")
+summary(col_log)
+
+# Next, account for class imbalance by upsampling, use F1/specificity/sensitivity
 
