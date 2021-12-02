@@ -71,15 +71,30 @@ m1 <- zeroinfl(Individual ~ Mean_800 +
                data = jlm_con, dist = "negbin")
 summary(m1)
 
-m2 <- zeroinfl(Collective ~ Mean_800 + 
+m2 <- zeroinfl(Collective ~ Mean_800 + #Why does collective have NA's?
                  Jewish_segment + JLR_station +
                  Damascus_Gate_dis + With_settlements +
                  change_1250_800 + change_2000_1250,
                data = jlm_con, dist = "negbin")
 summary(m2)
 
-# Logistic models
 
+# Zero inflated poisson
+m3 <- zeroinfl(Individual ~ Mean_800 + 
+                 Jewish_segment + JLR_station +
+                 Damascus_Gate_dis + With_settlements +
+                 change_1250_800 + change_2000_1250,
+               data = jlm_con, dist = "poisson")
+summary(m3)
+
+m4 <- zeroinfl(Collective ~ Mean_800 + 
+                 Jewish_segment + JLR_station +
+                 Damascus_Gate_dis + With_settlements +
+                 change_1250_800 + change_2000_1250,
+               data = jlm_con, dist = "poisson")
+summary(m4)
+
+# Logistic models
 jlm_con <- jlm_con %>%
   mutate(Individual_ind = ifelse(Individual == 0, 0, 1),
          Collective_ind = ifelse(Collective == 0, 0, 1))
@@ -133,6 +148,8 @@ col_smote_tuned <- glm(Collective_ind ~ Jewish_segment +
                        data=col_smote, family = "binomial")
 summary(col_smote_tuned)
 
+#Play with stepwise forward/backward
+
 # Interactions
 ind_smote_int <- glm(Individual_ind ~ JLR_station +
                        Damascus_Gate_dis + With_settlements +
@@ -174,15 +191,15 @@ col_smote <- col_smote %>%
          change_2k_sq = change_2000_1250^2)
 
 ind_smote_int_sq <- glm(Individual_ind ~ JLR_station +
-                             Damascus_Gate_dis + With_settlements +
-                             change_2000_1250 +
-                             With_settlements:change_2000_1250 +
+                          Damascus_Gate_dis + With_settlements +
+                          change_2000_1250 +
+                          With_settlements:change_2000_1250 +
                           Damascus_sq + change_2k_sq,
-                           data=ind_smote, family = "binomial")
+                        data=ind_smote, family = "binomial")
 summary(ind_smote_int_sq)
 
 col_smote_int_sq <- glm(Collective_ind ~ Jewish_segment +
-                             Damascus_Gate_dis + Jewish_segment:Damascus_Gate_dis +
+                          Damascus_Gate_dis + Jewish_segment:Damascus_Gate_dis +
                           Damascus_sq,
-                           data=col_smote, family = "binomial")
+                        data=col_smote, family = "binomial")
 summary(col_smote_int_sq)
