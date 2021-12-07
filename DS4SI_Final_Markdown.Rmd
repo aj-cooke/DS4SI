@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 if (!require("pacman")) install.packages("pacman") 
 # Also install the packages inside the parentheses
 pacman::p_load(pacman, dplyr, ggplot2, corrplot, RColorBrewer, pscl, 
-               smotefamily, broom, MASS, gtable, gridExtra, stargazer)
+               smotefamily, broom, MASS, gtable, gridExtra, stargazer, ROCR)
 ```
 
 ```{r libraries}
@@ -31,6 +31,7 @@ library("corrplot")
 library("RColorBrewer")
 library("pscl")
 library("smotefamily")
+library("ROCR")
 ```
 
 ```{r load_data}
@@ -466,3 +467,41 @@ For individual, the smoted model had the same accuracy, but higher recall and F1
 indicating it is more useful. For collective, the most effective model remains
 the logistic regression with only the significant attributes including no 
 interaction terms. Sometimes simple is best.
+
+
+```{r roc}
+predi <- prediction(test$ind_base_pred, test$Individual_ind)
+perfi <- performance(predi,"tpr","fpr")
+predis <- prediction(test$ind_smote_pred, test$Individual_ind)
+perfis <- performance(predis,"tpr","fpr")
+plot(perfi, col = "blue")
+plot(perfis, add = TRUE, col = "red")
+ibase_label <- round(performance(predi, measure = "auc")@y.values[[1]], 2)
+ibase_label <- paste("Individual Base - AUC = ", ibase_label)
+ismote_label <- round(performance(predis, measure = "auc")@y.values[[1]], 2)
+ismote_label <- paste("Individual SMOTE - AUC = ", ismote_label)
+legend(0.5,0.3,legend=c(ibase_label, ismote_label), 
+       fill = c("blue","red")
+)
+title("ROC Curve, Individual Base vs. Smoted Logistic Regression")
+```
+
+```{r roc}
+predc <- prediction(test$col_base_pred, test$Collective_ind)
+perfc <- performance(predc,"tpr","fpr")
+predcs <- prediction(test$col_smote_pred, test$Collective_ind)
+perfcs <- performance(predcs,"tpr","fpr")
+plot(perfc, col = "blue")
+plot(perfcs, add = TRUE, col = "red")
+cbase_label <- round(performance(predc, measure = "auc")@y.values[[1]], 2)
+cbase_label <- paste("Collective Base - AUC = ", cbase_label)
+csmote_label <- round(performance(predcs, measure = "auc")@y.values[[1]], 2)
+csmote_label <- paste("Collective SMOTE - AUC = ", csmote_label)
+legend(0.5,0.3,legend=c(cbase_label, csmote_label), 
+       fill = c("blue","red")
+)
+title("ROC Curve, Collective Base vs. Smoted Logistic Regression")
+```
+
+
+
