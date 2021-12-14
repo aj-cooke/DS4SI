@@ -80,7 +80,8 @@ jlm_con <- jlm_con %>%
 
 ```{r correlation}
 M <-cor(jlm_con)
-corrplot(M)
+corrplot(M, tl.col = "black", 
+         tl.cex = 0.6, tl.srt = 45)
 ```
 
 ```{r models_with_new_features}
@@ -147,14 +148,14 @@ model is needed.
 
 ```{r ind_dist}
 p <- ggplot(jlm_con, aes(Individual)) +
-  geom_histogram() +
+  geom_histogram(fill = "red") +
   labs(title = "Distribution of Individual Attacks")
 p
 ```
 
 ```{r ind_dist}
 p <- ggplot(jlm_con, aes(Collective)) +
-  geom_histogram() +
+  geom_histogram(fill = "red") +
   labs(title = "Distribution of Collective Attacks")
 p
 ```
@@ -502,6 +503,5 @@ legend(0.5,0.3,legend=c(cbase_label, csmote_label),
 )
 title("ROC Curve, Collective Base vs. Smoted Logistic Regression")
 ```
-
 
 
