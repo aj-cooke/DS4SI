@@ -42,6 +42,7 @@ These are the original models fitted in the paper. They will be used as a
 bench mark for the subsequent models created in this document.
 
 ```{r original_models}
+# original models for individual and collective from paper
 ind <- glm.nb(Individual ~ Mean_800 + 
                 Jewish_segment + JLR_station +
                 Damascus_Gate_dis + With_settlements 
@@ -62,10 +63,12 @@ summary(col)
 The original models use only one of Mean_800, Mean_1250, and Mean_2000 because
 they are highly correlated connectivity measurements only differing by the 
 change of a hyperparameter. To capture the information from the difference in
-each of these while not introducing any more multicolinearity, we will add
+each of these while not introducing any more multicollinearity, we will add
 percentage change from Mean_800 to Mean_1250 and Mean_1250 to Mean_2000.
 
 ```{r fill_nulls}
+# For each column, take each null value and replace with the mean
+# avoid future errors in modeling and improve usability
 for (i in colnames(jlm_con)) {
   jlm_con[[i]][is.na(jlm_con[[i]])]<-mean(jlm_con[[i]], na.rm = TRUE)
   print(i)
@@ -73,15 +76,16 @@ for (i in colnames(jlm_con)) {
 ```
 
 ```{r new_features}
+# percentage change
 jlm_con <- jlm_con %>%
   mutate(change_1250_800 = (Mean_1250 - Mean_800)/Mean_800,
          change_2000_1250 = (Mean_2000 - Mean_1250)/Mean_1250)
 ```
 
 ```{r correlation}
-M <-cor(jlm_con)
+M <-cor(jlm_con) # correlation table
 corrplot(M, tl.col = "black", 
-         tl.cex = 0.6, tl.srt = 45)
+         tl.cex = 0.6, tl.srt = 45) # create plot and format
 ```
 
 ```{r models_with_new_features}
@@ -100,8 +104,6 @@ change_col <- glm.nb(Collective ~ Mean_800 +
                        change_1250_800 + change_2000_1250,
                      data=jlm_con)
 summary(change_col)
-AIC(ind, change_ind)
-AIC(col, change_col)
 ```
 
 ```{r models_compare1}
@@ -114,6 +116,7 @@ model had a higher AIC without the new features. Now we will remove
 insignificant features from the models.
 
 ```{r models_sig1}
+# include significant variables only
 change_ind_s <- glm.nb(Individual ~ Mean_800 + 
                        JLR_station +
                        With_settlements +
@@ -147,13 +150,15 @@ binomial regression when there is a non-zero count. Let's see if a zero inflated
 model is needed.
 
 ```{r ind_dist}
-p <- ggplot(jlm_con, aes(Individual)) +
+# create histogram with number of individual attacks
+p <- ggplot(jlm_con, aes(Individual)) + 
   geom_histogram(fill = "red") +
   labs(title = "Distribution of Individual Attacks")
 p
 ```
 
-```{r ind_dist}
+```{r col_dist}
+# create histogram with number of collective attacks
 p <- ggplot(jlm_con, aes(Collective)) +
   geom_histogram(fill = "red") +
   labs(title = "Distribution of Collective Attacks")
@@ -164,7 +169,7 @@ Both target variables show a glaring need for a zero inflated model. We will
 also add a zero inflated poisson model for comparison.
 
 ```{r zeroinfl}
-# Zero inflated models
+# Zero inflated NB
 m1 <- zeroinfl(Individual ~ Mean_800 + 
                  Jewish_segment + JLR_station +
                  Damascus_Gate_dis + With_settlements +
@@ -217,7 +222,7 @@ m1_s <- zeroinfl(Individual ~ Mean_800 +
                data = jlm_con, dist = "negbin")
 summary(m1_s)
 
-#m2 no significants
+# m2 had no significant variables
 
 m3_s <- zeroinfl(Individual ~ Mean_800 + 
                  Jewish_segment + JLR_station +
@@ -251,10 +256,12 @@ whether or not there will be an attack would be more useful than a less accurate
 count model that loses performance discerning between 1, 2, or 3 attacks.
 
 ```{r logit}
+# Create indicator, if 0 attacks then 0. If more, then 1
 jlm_con <- jlm_con %>%
   mutate(Individual_ind = ifelse(Individual == 0, 0, 1),
          Collective_ind = ifelse(Collective == 0, 0, 1))
 
+# logistic regression models
 ind_log <- glm(Individual_ind ~ Mean_800 + 
                  Jewish_segment + JLR_station +
                  Damascus_Gate_dis + With_settlements +
@@ -316,6 +323,7 @@ col_log_t <- glm(Collective_ind ~ Jewish_segment +
                  data=jlm_con, family = "binomial")
 summary(col_log_t)
 ```
+
 ```{r int_comp}
 AIC(ind, change_ind, change_ind_s, m1, m3, m1_s, m3_s, ind_log, ind_log_s, ind_log_t)
 AIC(col, change_col, change_col_s, m2, m4, m4_s, col_log, col_log_s, col_log_t)
@@ -380,6 +388,7 @@ summary(col_base)
 
 ```{r smote_df}
 # dup_size in smote function is desired minority class size / actual minority size
+# Want it to be 40% of total 
 
 IND_DUP_SIZE = 0.4 / (table(train$Individual_ind)[2] / (table(train$Individual_ind)[2] 
                                                    + table(train$Individual_ind)[1]))
@@ -407,7 +416,7 @@ summary(col_smote)
 ```
 
 ```{r predict}
-# for each model, add predict column to the test set
+# for each model, add predict column to the test set and probability column
 test <- test %>%
   mutate(ind_base_prob = predict(ind_base, newdata = test, type = "response"),
          col_base_prob = predict(col_base, newdata = test, type = "response"),
@@ -420,7 +429,7 @@ test <- test %>%
 ```
 
 ```{r confusion}
-# Based on confusion matrix find accuracy, precision, recall, and f1 for models
+# Based on confusion matrix find accuracy, precision, recall, and f1 for all models
 ind_base_confusion = as.matrix(table(Actual_Values = test$Individual_ind, Predicted_Values = test$ind_base_pred)) 
 print(ind_base_confusion)
 IND_BASE_ACC = (ind_base_confusion[1,1] + ind_base_confusion[2,2]) / (nrow(test))
@@ -456,7 +465,7 @@ positives indicating the SMOTE training did not imporve the model
 
 
 ```{r confusion}
-# Nicely formatted table with metrics
+# Nicely formatted table with model performance metrics
 performance <- data.frame(model = c('ind_base', 'col_base', 'ind_smote', 'col_smote'),
                           accuracy = c(IND_BASE_ACC, COL_BASE_ACC, IND_SMOTE_ACC, COL_SMOTE_ACC),
                           precision = c(IND_BASE_PREC, COL_BASE_PREC, IND_SMOTE_PREC, COL_SMOTE_PREC),
@@ -471,16 +480,20 @@ interaction terms. Sometimes simple is best.
 
 
 ```{r roc}
+# arrays necessary for roc plot function
 predi <- prediction(test$ind_base_pred, test$Individual_ind)
 perfi <- performance(predi,"tpr","fpr")
 predis <- prediction(test$ind_smote_pred, test$Individual_ind)
 perfis <- performance(predis,"tpr","fpr")
+# plot curve
 plot(perfi, col = "blue")
 plot(perfis, add = TRUE, col = "red")
+# add auc levels
 ibase_label <- round(performance(predi, measure = "auc")@y.values[[1]], 2)
 ibase_label <- paste("Individual Base - AUC = ", ibase_label)
 ismote_label <- round(performance(predis, measure = "auc")@y.values[[1]], 2)
 ismote_label <- paste("Individual SMOTE - AUC = ", ismote_label)
+# add legends
 legend(0.5,0.3,legend=c(ibase_label, ismote_label), 
        fill = c("blue","red")
 )
@@ -503,5 +516,4 @@ legend(0.5,0.3,legend=c(cbase_label, csmote_label),
 )
 title("ROC Curve, Collective Base vs. Smoted Logistic Regression")
 ```
-
 
