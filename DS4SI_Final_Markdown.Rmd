@@ -2,7 +2,10 @@
 title: "DS4SI Final"
 author: "Andrew Cooke"
 date: "12/3/2021"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ## R Markdown
@@ -428,7 +431,7 @@ test <- test %>%
          col_smote_pred = if_else(col_smote_prob >= 0.5, 1, 0))
 ```
 
-```{r confusion}
+```{r conf}
 # Based on confusion matrix find accuracy, precision, recall, and f1 for all models
 ind_base_confusion = as.matrix(table(Actual_Values = test$Individual_ind, Predicted_Values = test$ind_base_pred)) 
 print(ind_base_confusion)
@@ -500,7 +503,7 @@ legend(0.5,0.3,legend=c(ibase_label, ismote_label),
 title("ROC Curve, Individual Base vs. Smoted Logistic Regression")
 ```
 
-```{r roc}
+```{r roc2}
 predc <- prediction(test$col_base_pred, test$Collective_ind)
 perfc <- performance(predc,"tpr","fpr")
 predcs <- prediction(test$col_smote_pred, test$Collective_ind)
