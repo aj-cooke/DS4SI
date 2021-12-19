@@ -328,7 +328,8 @@ summary(col_log_t)
 ```
 
 ```{r int_comp}
-AIC(ind, change_ind, change_ind_s, m1, m3, m1_s, m3_s, ind_log, ind_log_s, ind_log_t)
+AIC(ind, change_ind, change_ind_s, m1, m3, m1_s, m3_s, 
+    ind_log, ind_log_s, ind_log_t)
 AIC(col, change_col, change_col_s, m2, m4, m4_s, col_log, col_log_s, col_log_t)
 ```
 
@@ -390,19 +391,23 @@ summary(col_base)
 ```
 
 ```{r smote_df}
-# dup_size in smote function is desired minority class size / actual minority size
+# dup_size in smote function is desired minority size / actual minority size
 # Want it to be 40% of total 
 
-IND_DUP_SIZE = 0.4 / (table(train$Individual_ind)[2] / (table(train$Individual_ind)[2] 
-                                                   + table(train$Individual_ind)[1]))
-COL_DUP_SIZE = 0.4 / (table(train$Collective_ind)[2] / (table(train$Collective_ind)[2] 
-                                                              + table(train$Collective_ind)[1]))
+IND_DUP_SIZE = 0.4 / (table(train$Individual_ind)[2] / 
+                        (table(train$Individual_ind)[2] 
+                         + table(train$Individual_ind)[1]))
+COL_DUP_SIZE = 0.4 / (table(train$Collective_ind)[2] / 
+                        (table(train$Collective_ind)[2] 
+                         + table(train$Collective_ind)[1]))
 
 # create smoted training sets using smote function
-ind_smote_df <- SMOTE(ind_train, ind_train$Individual_ind, K = 3, dup_size = IND_DUP_SIZE)
+ind_smote_df <- SMOTE(ind_train, ind_train$Individual_ind, K = 3,
+                      dup_size = IND_DUP_SIZE)
 ind_smote_df <- ind_smote_df$data
 
-col_smote_df <- SMOTE(col_train, col_train$Collective_ind, K = 3, dup_size = COL_DUP_SIZE)
+col_smote_df <- SMOTE(col_train, col_train$Collective_ind, K = 3, 
+                      dup_size = COL_DUP_SIZE)
 col_smote_df <- col_smote_df$data
 ```
 
@@ -432,34 +437,54 @@ test <- test %>%
 ```
 
 ```{r conf}
-# Based on confusion matrix find accuracy, precision, recall, and f1 for all models
-ind_base_confusion = as.matrix(table(Actual_Values = test$Individual_ind, Predicted_Values = test$ind_base_pred)) 
+# Based on confusion matrix find accuracy, precision, recall, f1 for all models
+ind_base_confusion = as.matrix(table(Actual_Values = test$Individual_ind, 
+                                     Predicted_Values = test$ind_base_pred)) 
 print(ind_base_confusion)
-IND_BASE_ACC = (ind_base_confusion[1,1] + ind_base_confusion[2,2]) / (nrow(test))
-IND_BASE_PREC = (ind_base_confusion[2,2])/(ind_base_confusion[2,2]+ind_base_confusion[1,2])
-IND_BASE_RECALL = (ind_base_confusion[2,2])/(ind_base_confusion[2,2]+ind_base_confusion[2,1])
-IND_BASE_F1 = 2*((IND_BASE_PREC * IND_BASE_RECALL) / (IND_BASE_PREC+IND_BASE_RECALL))
+IND_BASE_ACC = (ind_base_confusion[1,1] + ind_base_confusion[2,2]) / 
+  (nrow(test))
+IND_BASE_PREC = (ind_base_confusion[2,2])/
+  (ind_base_confusion[2,2]+ind_base_confusion[1,2])
+IND_BASE_RECALL = (ind_base_confusion[2,2])/
+  (ind_base_confusion[2,2]+ind_base_confusion[2,1])
+IND_BASE_F1 = 2*((IND_BASE_PREC * IND_BASE_RECALL) / 
+                   (IND_BASE_PREC+IND_BASE_RECALL))
 
-col_base_confusion = as.matrix(table(Actual_Values = test$Collective_ind, Predicted_Values = test$col_base_pred)) 
+col_base_confusion = as.matrix(table(Actual_Values = test$Collective_ind, 
+                                     Predicted_Values = test$col_base_pred)) 
 print(col_base_confusion)
-COL_BASE_ACC = (col_base_confusion[1,1] + col_base_confusion[2,2]) / (nrow(test))
-COL_BASE_PREC = (col_base_confusion[2,2])/(col_base_confusion[2,2]+col_base_confusion[1,2])
-COL_BASE_RECALL = (col_base_confusion[2,2])/(col_base_confusion[2,2]+col_base_confusion[2,1])
-COL_BASE_F1 = 2*((COL_BASE_PREC * COL_BASE_RECALL) / (COL_BASE_PREC+COL_BASE_RECALL))
+COL_BASE_ACC = (col_base_confusion[1,1] + col_base_confusion[2,2]) / 
+  (nrow(test))
+COL_BASE_PREC = (col_base_confusion[2,2])/(col_base_confusion[2,2]+
+                                             col_base_confusion[1,2])
+COL_BASE_RECALL = (col_base_confusion[2,2])/(col_base_confusion[2,2]+
+                                               col_base_confusion[2,1])
+COL_BASE_F1 = 2*((COL_BASE_PREC * COL_BASE_RECALL) / (COL_BASE_PREC+
+                                                        COL_BASE_RECALL))
 
-ind_smote_confusion = as.matrix(table(Actual_Values = test$Individual_ind, Predicted_Values = test$ind_smote_pred)) 
+ind_smote_confusion = as.matrix(table(Actual_Values = test$Individual_ind, 
+                                      Predicted_Values = test$ind_smote_pred)) 
 print(ind_smote_confusion)
-IND_SMOTE_ACC = (ind_smote_confusion[1,1] + ind_smote_confusion[2,2]) / (nrow(test))
-IND_SMOTE_PREC = (ind_smote_confusion[2,2])/(ind_smote_confusion[2,2]+ind_smote_confusion[1,2])
-IND_SMOTE_RECALL = (ind_smote_confusion[2,2])/(ind_smote_confusion[2,2]+ind_smote_confusion[2,1])
-IND_SMOTE_F1 = 2*((IND_SMOTE_PREC * IND_SMOTE_RECALL) / (IND_SMOTE_PREC+IND_SMOTE_RECALL))
+IND_SMOTE_ACC = (ind_smote_confusion[1,1] + ind_smote_confusion[2,2]) / 
+  (nrow(test))
+IND_SMOTE_PREC = (ind_smote_confusion[2,2])/(ind_smote_confusion[2,2]+
+                                               ind_smote_confusion[1,2])
+IND_SMOTE_RECALL = (ind_smote_confusion[2,2])/(ind_smote_confusion[2,2]+
+                                                 ind_smote_confusion[2,1])
+IND_SMOTE_F1 = 2*((IND_SMOTE_PREC * IND_SMOTE_RECALL) / (IND_SMOTE_PREC+
+                                                           IND_SMOTE_RECALL))
 
-col_smote_confusion = as.matrix(table(Actual_Values = test$Collective_ind, Predicted_Values = test$col_smote_pred)) 
+col_smote_confusion = as.matrix(table(Actual_Values = test$Collective_ind, 
+                                      Predicted_Values = test$col_smote_pred)) 
 print(col_smote_confusion)
-COL_SMOTE_ACC = (col_smote_confusion[1,1] + col_smote_confusion[2,2]) / (nrow(test))
-COL_SMOTE_PREC = (col_smote_confusion[2,2])/(col_smote_confusion[2,2]+col_smote_confusion[1,2])
-COL_SMOTE_RECALL = (col_smote_confusion[2,2])/(col_smote_confusion[2,2]+col_smote_confusion[2,1])
-COL_SMOTE_F1 = 2*((COL_SMOTE_PREC * COL_SMOTE_RECALL) / (COL_SMOTE_PREC+COL_SMOTE_RECALL))
+COL_SMOTE_ACC = (col_smote_confusion[1,1] + col_smote_confusion[2,2]) / 
+  (nrow(test))
+COL_SMOTE_PREC = (col_smote_confusion[2,2])/(col_smote_confusion[2,2]+
+                                               col_smote_confusion[1,2])
+COL_SMOTE_RECALL = (col_smote_confusion[2,2])/(col_smote_confusion[2,2]+
+                                                 col_smote_confusion[2,1])
+COL_SMOTE_F1 = 2*((COL_SMOTE_PREC * COL_SMOTE_RECALL) / (COL_SMOTE_PREC+
+                                                           COL_SMOTE_RECALL))
 ```
 For the non-smoted individual model, you would be nearly as effective just
 predicting no attacks as the model only predicted one attack. However for 
@@ -469,11 +494,16 @@ positives indicating the SMOTE training did not imporve the model
 
 ```{r confusion}
 # Nicely formatted table with model performance metrics
-performance <- data.frame(model = c('ind_base', 'col_base', 'ind_smote', 'col_smote'),
-                          accuracy = c(IND_BASE_ACC, COL_BASE_ACC, IND_SMOTE_ACC, COL_SMOTE_ACC),
-                          precision = c(IND_BASE_PREC, COL_BASE_PREC, IND_SMOTE_PREC, COL_SMOTE_PREC),
-                          recall = c(IND_BASE_RECALL, COL_BASE_RECALL, IND_SMOTE_RECALL, COL_SMOTE_RECALL),
-                          f1 = c(IND_BASE_F1, COL_BASE_F1, IND_SMOTE_F1, COL_SMOTE_F1))
+performance <- data.frame(model = c('ind_base', 'col_base', 'ind_smote', 
+                                    'col_smote'),
+                          accuracy = c(IND_BASE_ACC, COL_BASE_ACC, 
+                                       IND_SMOTE_ACC, COL_SMOTE_ACC),
+                          precision = c(IND_BASE_PREC, COL_BASE_PREC, 
+                                        IND_SMOTE_PREC, COL_SMOTE_PREC),
+                          recall = c(IND_BASE_RECALL, COL_BASE_RECALL, 
+                                     IND_SMOTE_RECALL, COL_SMOTE_RECALL),
+                          f1 = c(IND_BASE_F1, COL_BASE_F1, IND_SMOTE_F1, 
+                                 COL_SMOTE_F1))
 print(performance)
 ```
 For individual, the smoted model had the same accuracy, but higher recall and F1
